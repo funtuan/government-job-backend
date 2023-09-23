@@ -38,5 +38,5 @@ export async function getLineNotifyAccessToken(
     }),
   }) as any
 
-  return (res.json())?.access_token
+  return (await res.json())?.access_token
 }

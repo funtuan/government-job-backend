@@ -1,0 +1,11 @@
+name="government-job-backend"
+main="src/index.ts"
+
+compatibility_date = "2022-11-22"
+
+kv_namespaces = [
+  { binding = "kv", id = "701ff1adb7fa4f60be79141123b4786a", preview_id = "c700a19078874dcfbbab98a7994a663a" }
+]
+
+[triggers]
+crons = ["30 9 * * *", "0 10 * * *"]
