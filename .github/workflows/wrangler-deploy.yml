@@ -18,10 +18,6 @@ jobs:
           secrets: |
             LINE_NOTIFY_CLIENT_ID
             LINE_NOTIFY_CLIENT_SECRET
-            BACKEND_HOST
-            FRONTEND_HOST
         env:
           LINE_NOTIFY_CLIENT_ID: ${{ secrets.LINE_NOTIFY_CLIENT_ID }}
           LINE_NOTIFY_CLIENT_SECRET: ${{ secrets.LINE_NOTIFY_CLIENT_SECRET }}
-          BACKEND_HOST: ${{ secrets.BACKEND_HOST }}
-          FRONTEND_HOST: ${{ secrets.FRONTEND_HOST }}
