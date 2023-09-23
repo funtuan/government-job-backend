@@ -26,7 +26,7 @@ app.use('*', poweredBy())
 
 // 首頁 hello world
 app.get('/', async(c) => {
-  return c.html('hello world')
+  return c.html('hello world!')
 })
 
 // 取得符合條件新職缺
