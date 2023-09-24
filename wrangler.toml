@@ -9,3 +9,9 @@ kv_namespaces = [
 
 [triggers]
 crons = ["30 9 * * *", "0 10 * * *"]
+
+
+[vars]
+LINE_NOTIFY_ID = "ZFq9Ex2O2rjNUdDVvaLVAU"
+BACKEND_HOST = "https://opencpa-api.funtuan.work"
+FRONTEND_HOST = "https://opencpa.funtuan.work"

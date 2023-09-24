@@ -14,8 +14,8 @@ import {
 
 export type Bindings = {
   kv: KVNamespace
-  LINE_NOTIFY_CLIENT_ID: string
-  LINE_NOTIFY_CLIENT_SECRET: string
+  LINE_NOTIFY_ID: string
+  LINE_NOTIFY_SECRET: string
   BACKEND_HOST: string
   FRONTEND_HOST: string
 }
@@ -89,8 +89,8 @@ app.post(
 
     const accessToken = await getLineNotifyAccessToken(
       {
-        clientId: c.env.LINE_NOTIFY_CLIENT_ID,
-        clientSecret: c.env.LINE_NOTIFY_CLIENT_SECRET,
+        clientId: c.env.LINE_NOTIFY_ID,
+        clientSecret: c.env.LINE_NOTIFY_SECRET,
       },
       data.authorizationCode,
       data.redirectUri,
