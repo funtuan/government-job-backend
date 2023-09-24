@@ -1,6 +1,8 @@
 name="government-job-backend"
 main="src/index.ts"
 
+usage_model = "bundled"
+
 compatibility_date = "2022-11-22"
 
 kv_namespaces = [
