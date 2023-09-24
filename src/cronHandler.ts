@@ -37,7 +37,10 @@ function convertJobCondition(fields: any) {
   // 是否須具身心障礙手冊
   let isDisability = false
   if (
-    fields?.work_quality?.includes('具身心障礙證明') ||
+    (
+      fields?.work_quality?.includes('具身心障礙證明') &&
+      !fields?.work_quality.match(/具身心障礙證明.{0,10}優先/)
+    ) ||
     fields?.title?.includes('具身心障礙證明')
   ) {
     isDisability = true
