@@ -38,7 +38,7 @@ function convertJobCondition(fields: any) {
   let isDisability = false
   if (
     fields?.work_quality?.includes('身心障礙') ||
-    fields?.title?.includes('身障')
+    fields?.title?.includes('身心障礙')
   ) {
     isDisability = true
   }
