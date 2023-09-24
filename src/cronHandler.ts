@@ -58,7 +58,7 @@ function convertJobCondition(fields: any) {
 export function checkConditions(data: any, condition: NotifyCondition) {
   if (
     condition.jobType != null &&
-    data?.fields?.work_type !== condition.jobType
+    data?.fields?.work_type.includes(condition.jobType)
   ) {
     return false
   }
