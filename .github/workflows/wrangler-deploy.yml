@@ -15,9 +15,3 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN_NEW }}
-          secrets: |
-            LINE_NOTIFY_CLIENT_ID
-            LINE_NOTIFY_CLIENT_SECRET
-        env:
-          LINE_NOTIFY_CLIENT_ID: ${{ secrets.LINE_NOTIFY_CLIENT_ID }}
-          LINE_NOTIFY_CLIENT_SECRET: ${{ secrets.LINE_NOTIFY_CLIENT_SECRET }}
