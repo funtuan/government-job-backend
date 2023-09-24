@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { poweredBy } from 'hono/powered-by'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
+import { cors } from 'hono/cors'
 import { getLineNotifyAccessToken } from "./utils/lineNotify"
 import { 
   cronRefreshJobs, 
@@ -22,7 +23,7 @@ export type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.use('*', poweredBy())
+app.use('*', poweredBy(), cors())
 
 // 首頁 hello world
 app.get('/', async(c) => {
