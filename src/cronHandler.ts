@@ -138,20 +138,20 @@ export const cronNotify = async (env: Bindings) => {
 
       if (matchedJobs.length === 0) continue
 
-      for (let i = 0; i < Math.min(matchedJobs.length, 10); i++) {
-        try {
+      try {
+        for (let i = 0; i < Math.min(matchedJobs.length, 10); i++) {
           await sendLineNotify(
             stringifyData(matchedJobs[i].fields),
             notifyConfig.lineNotifyToken,
           )
-        } catch (error) {
-          // 如果被解除授權，刪除 notifyConfig
-          if (error.message.includes('Invalid access token')) {
-            await env.kv.delete(key.name)
-          }
-          console.log(error)
-          continue
         }
+      } catch (error) {
+        // 如果被解除授權，刪除 notifyConfig
+        if (error.message.includes('Invalid access token')) {
+          await env.kv.delete(key.name)
+        }
+        console.log(error)
+        continue
       }
 
       // 隨機產生 id
