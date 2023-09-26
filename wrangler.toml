@@ -1,7 +1,7 @@
 name="government-job-backend"
 main="src/index.ts"
 
-usage_model = "bundled"
+usage_model = "unbound"
 
 compatibility_date = "2022-11-22"
 
