@@ -12,6 +12,10 @@ export async function sendLineNotify(message, token) {
     }),
   })
 
+  if (!res.ok) {
+    throw new Error(await res.text())
+  }
+
   return res
 }
 
@@ -37,6 +41,6 @@ export async function getLineNotifyAccessToken(
       client_secret: clientSecret,
     }),
   }) as any
-
+  
   return (await res.json())?.access_token
 }

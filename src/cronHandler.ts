@@ -146,7 +146,7 @@ export const cronNotify = async (env: Bindings) => {
           )
         } catch (error) {
           // 如果被解除授權，刪除 notifyConfig
-          if (error.response?.data?.code === 401) {
+          if (error.message === 'Invalid access token') {
             await env.kv.delete(key.name)
           }
           console.log(error)
