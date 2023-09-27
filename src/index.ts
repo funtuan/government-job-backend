@@ -107,10 +107,10 @@ app.post(
 
     const conditionText = Object.entries({
       官等: data.condition.jobType || '不限',
-      縣市: data.condition.citys.length > 0 ? data.condition.citys.join(', ') : '不限',
-      職系: data.condition.sysnams.length > 0 ? data.condition.sysnams.join(', ') : '不限',
-      是否排除身心障礙職缺: data.condition.isDisability != null ? (data.condition.isDisability ? '是' : '否') : '不限',
-    }).map(([key, value]) => `${key}: ${value}`).join('\n')
+      縣市: data.condition.citys.length > 0 ? data.condition.citys.join('、') : '不限',
+      職系: data.condition.sysnams.length > 0 ? data.condition.sysnams.join('、') : '不限',
+      是否排除身心障礙職缺: data.condition.isDisability != null ? (data.condition.isDisability ? '否' : '是') : '不限',
+    }).map(([key, value]) => `${key}：${value}`).join('\n')
 
     await sendLineNotify(
       `訂閱事求人職缺成功\n職缺過濾條件：\n${conditionText}\n\n將於每日下午 6 點通知符合條件新職缺`,
