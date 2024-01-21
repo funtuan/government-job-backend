@@ -10,9 +10,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@hono/zod-validator": "^0.1.8",
-    "hono": "3.6.3",
-    "zod": "^3.22.2"
+    "@hono/zod-validator": "0.1.11",
+    "hono": "3.11.11",
+    "zod": "3.22.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
