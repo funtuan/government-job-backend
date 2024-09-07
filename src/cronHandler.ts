@@ -1,7 +1,6 @@
 
 import { Bindings } from "./index"
 import { z } from 'zod'
-import { sendLineNotify } from "./utils/lineNotify"
 
 export const notifyConfigSchema = z.object({
   id: z.string(),
@@ -115,9 +114,9 @@ export const stringifyData = (data) => {
 
 // Notify 提醒
 export const cronNotify = async (env: Bindings) => {
-  const { keys } = (await env.kv.list({
-    prefix: 'notifyConfig:',
-  }))
+  // DB 查詢所有 notifyConfig 設定
+  const { results: notifyConfigs } = await env.DB.prepare(`SELECT * FROM notify_config`).all() as { results: any[]}
+  console.log(`notifyConfigs: ${notifyConfigs.length}`)
 
   // 取得 KV 中的 currentJobs
   const currentJobs = JSON.parse(await env.kv.get('currentJobs') || '[]')
@@ -127,55 +126,32 @@ export const cronNotify = async (env: Bindings) => {
 
   const newJobs = currentJobs.filter((job: any) => !reminderNotifyWorkIds.includes(job.workId))
 
+  // 正確格式 notifyConfigs
+  const notifyNotifyConfigs = notifyConfigs.filter((one) => one.data && one.data.includes('lineNotifyToken'))
+  console.log('notifyConfigs.length', notifyConfigs.length)
+  console.log('notifyNotifyConfigs.length', notifyNotifyConfigs.length)
   if (newJobs.length > 0) {
-    for (const key of keys) {
+    for (const one of notifyNotifyConfigs) {
       try {
-        const data = await env.kv.get(key.name)
-        console.log(`notifyConfig: ${key.name}`, data)
-        if (!data) continue
-        const notifyConfig: NotifyConfig = JSON.parse(data)
+        const notifyConfig: NotifyConfig = JSON.parse(one.data)
   
         const matchedJobs = newJobs.filter((job: any) => checkConditions(job, notifyConfig.condition))
   
         if (matchedJobs.length === 0) continue
-  
-        try {
-          for (let i = 0; i < Math.min(matchedJobs.length, 10); i++) {
-            await sendLineNotify(
-              stringifyData(matchedJobs[i].fields),
-              notifyConfig.lineNotifyToken,
-            )
-          }
-        } catch (error) {
-          // 如果被解除授權，刪除 notifyConfig
-          if (error.message.includes('Invalid access token')) {
-            await env.kv.delete(key.name)
-          }
-          throw error
-        }
-  
-        // 隨機產生 id
-        const id = Math.random().toString(36).substring(2, 15)
-        const viewUrl = `${env.BACKEND_HOST}/view/${id}`
-        await env.kv.put(`view:${id}`, JSON.stringify(matchedJobs), {
-          expirationTtl: 60 * 60 * 24 * 7, // 7 days
+
+        // Add queue
+        console.log('env.queue.send', {
+          id: one.id,
+          matchedJobs,
+          notifyConfig,
         })
-  
-        const systemContent = `設定其他條件 ${env.FRONTEND_HOST}\n取消通知訂閱 https://notify-bot.line.me/my/`
-  
-        if (matchedJobs.length > 10) {
-          await sendLineNotify(
-            `今日符合職缺共 ${matchedJobs.length} 筆，以上只顯示前 10 筆\n${viewUrl}\n\n${systemContent}`,
-            notifyConfig.lineNotifyToken,
-          )
-        } else {
-          await sendLineNotify(
-            `今日符合職缺共 ${matchedJobs.length} 筆，以上為全部\n${viewUrl}\n\n${systemContent}`,
-            notifyConfig.lineNotifyToken,
-          )
-        }
+        await env.queue.send({
+          id: one.id,
+          matchedJobs,
+          notifyConfig,
+        })
       } catch (error) {
-        console.log('key', key, error)
+        console.log('notifyConfig error', one, error)
         continue
       }
     }
@@ -191,3 +167,4 @@ export const cronNotify = async (env: Bindings) => {
     )).slice(0, 50000),
   ))
 }
+

@@ -12,13 +12,16 @@ import {
   notifyConfigSchema,
   checkConditions,
 } from './cronHandler'
+import { queueWorker } from './queueWorker'
 
 export type Bindings = {
   kv: KVNamespace
+  queue: Queue<any>
   LINE_NOTIFY_ID: string
   LINE_NOTIFY_SECRET: string
   BACKEND_HOST: string
   FRONTEND_HOST: string
+  DB: D1Database
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -100,10 +103,17 @@ app.post(
       error: 'get access token failed',
     }, 400)
 
-    await c.env.kv.put(`notifyConfig:${id}`, JSON.stringify({
+    // 改成 DB insert
+    await c.env.DB.prepare(`
+      INSERT INTO notify_config (id, data)
+      VALUES (?, ?)`).bind(id, JSON.stringify({
       lineNotifyToken: accessToken,
       condition: data.condition,
-    }))
+    })).run()
+    /* await c.env.kv.put(`notifyConfig:${id}`, JSON.stringify({
+      lineNotifyToken: accessToken,
+      condition: data.condition,
+    })) */
 
     const conditionText = Object.entries({
       官等: data.condition.jobType || '不限',
@@ -124,16 +134,110 @@ app.post(
 )
 // curl -X POST -H "Content-Type: application/json" -d '{"authorizationCode": "YOUR_AUTHORIZATION_CODE", "redirectUri": "YOUR_REDIRECT_URI", "condition": {"sysnams": ["綜合行政", "文教行政"]}}' http://localhost:8787/notifyConfig
 
+// api call cronRefreshJobs
+// curl "http://localhost:8787/__cronRefreshJobs"
+app.get('/__cronRefreshJobs', async(c) => {
+  await cronRefreshJobs(c.env)
+  return c.json({
+    message: 'success',
+  })
+})
+
+// api call cronNotify
+// curl "http://localhost:8787/__cronNotify"
+app.get('/__cronNotify', async(c) => {
+  await cronNotify(c.env)
+  return c.json({
+    message: 'success',
+  })
+})
+
+app.post(
+  '/__kvMigrate',
+  zValidator(
+    'json',
+    z.object({
+      index: z.number().int().gte(0),
+    }),
+  ),
+  async(c) => {
+    await kvMigrate(c.env, c.req.valid('json').index)
+    return c.json({
+      message: 'success',
+    })
+  },
+)
+/*
+curl index 4~15 接續打
+curl -X POST -H "Content-Type: application/json" -d '{"index": 4}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 5}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 6}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 7}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 8}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 9}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 10}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 11}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 12}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 13}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 14}' http://localhost:8787/__kvMigrate
+curl -X POST -H "Content-Type: application/json" -d '{"index": 15}' http://localhost:8787/__kvMigrate
+
+表示接續
+*/
+
+// 將 KV 數據遷移到 D1
+const kvMigrate = async (env: Bindings, index: number) => {
+  // 輪詢取得所有 keys
+  const keys = []
+  const res = (await env.kv.list({
+    prefix: 'notifyConfig:',
+  })) as any
+  keys.push(...res.keys)
+  let cursor = res.cursor
+  do {
+    const res = await env.kv.list({
+      cursor,
+    }) as any
+    keys.push(...res.keys)
+    cursor = res.cursor
+  } while (cursor)
+
+  // 依據 key name 排序
+  keys.sort((a, b) => a.name.localeCompare(b.name))
+
+  // 每次遷移 100 筆
+  const start = index * 100
+  const end = start + 100
+
+  // 遷移 notifyConfig
+  for (const key of keys.slice(start, end)) {
+    const data = await env.kv.get(key.name)
+    if (!data) continue
+    const notifyConfig = JSON.parse(data)
+    const id = key.name.replace('notifyConfig:', '')
+    console.log('insert notifyConfig', id, notifyConfig)
+    await env.DB.prepare(`
+      INSERT INTO notify_config (id, data)
+      VALUES (?, ?)`).bind(id, JSON.stringify(notifyConfig)).run()
+  }
+}
+
 export default {
   fetch: app.fetch,
   async scheduled(event, env: Bindings, ctx) {
     console.log('scheduled', event)
+    // 只在台灣時間早上 9 點到晚上 9 點執行
+    const now = new Date()
+    const hour = now.getUTCHours() + 8
+    if (hour < 9 || hour >= 21) return
     // 區分事件
-    if (event.cron === '30 9 * * *') {
+    if (event.cron === '1 * * * *') {
       await cronRefreshJobs(env)
     }
-    if (event.cron === '0 10 * * *') {
+    // curl "http://192.168.8.153:8787/__scheduled?cron=0+10+*+*+*"
+    if (event.cron === '11 * * * *') {
       await cronNotify(env)
     }
   },
+  queue: queueWorker,
 }

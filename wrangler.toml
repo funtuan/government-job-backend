@@ -4,14 +4,30 @@ main="src/index.ts"
 compatibility_date = "2022-11-22"
 
 kv_namespaces = [
-  { binding = "kv", id = "701ff1adb7fa4f60be79141123b4786a", preview_id = "c700a19078874dcfbbab98a7994a663a" }
+  { binding = "kv", id = "701ff1adb7fa4f60be79141123b4786a", preview_id = "701ff1adb7fa4f60be79141123b4786a" }
 ]
 
 [triggers]
-crons = ["30 9 * * *", "0 10 * * *"]
+crons = ["1 * * * *", "11 * * * *"]
 
 
 [vars]
 LINE_NOTIFY_ID = "ZFq9Ex2O2rjNUdDVvaLVAU"
 BACKEND_HOST = "https://opencpa-api.funtuan.work"
 FRONTEND_HOST = "https://opencpa.funtuan.work"
+
+[[queues.producers]]
+ queue = "gov-job-notify"
+ binding = "queue"
+
+[[queues.consumers]]
+ queue = "gov-job-notify"
+ # Required: this should match the name of the queue you created in step 3.
+ # If you misspell the name, you will receive an error when attempting to publish your Worker.
+ max_batch_size = 1 # optional: defaults to 10
+ max_batch_timeout = 5 # optional: defaults to 5 seconds
+
+[[d1_databases]]
+binding = "DB" # available in your Worker on env.DB
+database_name = "government-job-backend"
+database_id = "305e581c-14a2-45a3-b03a-d62b84fd660a"
