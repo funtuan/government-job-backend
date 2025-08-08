@@ -24,7 +24,8 @@ export const queueWorker = async (batch, env): Promise<void> => {
         expirationTtl: 60 * 60 * 24 * 7, // 7 days
       })
 
-      const systemContent = `設定其他條件 ${env.FRONTEND_HOST}`
+      const unsubscribeUrl = `${env.BACKEND_HOST}/unsubscribe/${configId}`
+      const systemContent = `設定其他條件 ${env.FRONTEND_HOST}\n取消訂閱 ${unsubscribeUrl}`
 
       let summary = ''
       if (matchedJobs.length > 10) {

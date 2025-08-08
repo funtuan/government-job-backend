@@ -75,6 +75,13 @@ app.get('/view/:id', async(c) => {
 })
 // curl http://localhost:8787/view/1
 
+// 取消訂閱
+app.get('/unsubscribe/:id', async(c) => {
+  const { id } = c.req.param()
+  await c.env.DB.prepare(`DELETE FROM notify_config WHERE id = ?`).bind(id).run()
+  return c.html('您已成功取消訂閱')
+})
+
 
 // 註冊通知
 app.post(
