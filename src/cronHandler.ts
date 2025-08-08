@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 export const notifyConfigSchema = z.object({
   id: z.string(),
-  lineNotifyToken: z.string(),
+  email: z.string().email(),
   condition: z.object({
     jobType: z.string().optional(),
     citys: z.array(z.string()).optional(),
@@ -127,7 +127,7 @@ export const cronNotify = async (env: Bindings) => {
   const newJobs = currentJobs.filter((job: any) => !reminderNotifyWorkIds.includes(job.workId))
 
   // 正確格式 notifyConfigs
-  const notifyNotifyConfigs = notifyConfigs.filter((one) => one.data && one.data.includes('lineNotifyToken'))
+  const notifyNotifyConfigs = notifyConfigs.filter((one) => one.data && one.data.includes('email'))
   console.log('notifyConfigs.length', notifyConfigs.length)
   console.log('notifyNotifyConfigs.length', notifyNotifyConfigs.length)
   if (newJobs.length > 0) {

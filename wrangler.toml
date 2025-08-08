@@ -12,9 +12,10 @@ crons = ["1 * * * *", "11 * * * *"]
 
 
 [vars]
-LINE_NOTIFY_ID = "ZFq9Ex2O2rjNUdDVvaLVAU"
 BACKEND_HOST = "https://opencpa-api.funtuan.work"
 FRONTEND_HOST = "https://opencpa.funtuan.work"
+EMAIL_API_URL = "https://api.mailgun.net/v3/YOUR_DOMAIN_NAME/messages"
+SENDER_EMAIL = "Excited User <mailgun@YOUR_DOMAIN_NAME>"
 
 [[queues.producers]]
  queue = "gov-job-notify"
