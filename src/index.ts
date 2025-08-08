@@ -4,7 +4,6 @@ import { poweredBy } from 'hono/powered-by'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { cors } from 'hono/cors'
-import { getLineNotifyAccessToken, sendLineNotify } from "./utils/lineNotify"
 import { 
   cronRefreshJobs, 
   cronNotify, 
@@ -13,15 +12,17 @@ import {
   checkConditions,
 } from './cronHandler'
 import { queueWorker } from './queueWorker'
+import { sendEmail } from './utils/email'
 
 export type Bindings = {
   kv: KVNamespace
   queue: Queue<any>
-  LINE_NOTIFY_ID: string
-  LINE_NOTIFY_SECRET: string
+  DB: D1Database
   BACKEND_HOST: string
   FRONTEND_HOST: string
-  DB: D1Database
+  EMAIL_API_URL: string
+  EMAIL_API_KEY: string
+  SENDER_EMAIL: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -75,14 +76,13 @@ app.get('/view/:id', async(c) => {
 // curl http://localhost:8787/view/1
 
 
-// 註冊通知與 LINE Notify Token
+// 註冊通知
 app.post(
   '/notifyConfig',
   zValidator(
     'json',
     z.object({
-      authorizationCode: z.string(),
-      redirectUri: z.string(),
+      email: z.string().email(),
       condition: notifyConfigSchema.shape.condition,
     }),
   ),
@@ -91,29 +91,13 @@ app.post(
 
     const id = Math.random().toString(36).slice(2)
 
-    const accessToken = await getLineNotifyAccessToken(
-      {
-        clientId: c.env.LINE_NOTIFY_ID,
-        clientSecret: c.env.LINE_NOTIFY_SECRET,
-      },
-      data.authorizationCode,
-      data.redirectUri,
-    )
-    if (!accessToken) return c.json({
-      error: 'get access token failed',
-    }, 400)
-
     // 改成 DB insert
     await c.env.DB.prepare(`
       INSERT INTO notify_config (id, data)
       VALUES (?, ?)`).bind(id, JSON.stringify({
-      lineNotifyToken: accessToken,
+      email: data.email,
       condition: data.condition,
     })).run()
-    /* await c.env.kv.put(`notifyConfig:${id}`, JSON.stringify({
-      lineNotifyToken: accessToken,
-      condition: data.condition,
-    })) */
 
     const conditionText = Object.entries({
       官等: data.condition.jobType || '不限',
@@ -122,9 +106,13 @@ app.post(
       是否排除身心障礙職缺: data.condition.isDisability != null ? (data.condition.isDisability ? '否' : '是') : '不限',
     }).map(([key, value]) => `${key}：${value}`).join('\n')
 
-    await sendLineNotify(
-      `訂閱事求人職缺成功\n職缺過濾條件：\n${conditionText}\n\n將於每日下午 6 點通知符合條件新職缺`,
-      accessToken,
+    const text = `訂閱事求人職缺成功\n職缺過濾條件：\n${conditionText}\n\n將於每日下午 6 點通知符合條件新職缺`
+    await sendEmail(
+      c.env,
+      data.email,
+      '事求人職缺訂閱成功',
+      text,
+      text.replace(/\n/g, '<br>'),
     )
 
     return c.json({
